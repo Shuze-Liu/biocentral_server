@@ -117,7 +117,13 @@ def get_datasets(config_dict: dict, seqs: dict):
         if is_training(val[1]):
             train_data["ids"].append(id)
             train_data["X"].append(val[2])
-            target = target_classes[val[1]] if config_dict['discrete'] else val[1]
+            if config_dict['discrete']:
+                if val[1] in target_classes:
+                    target = target_classes[val[1]]
+                else:
+                    ValueError(f"get_datasets: illegal label {val[1]} in labels: {target_classes.keys()}")
+            else:
+                target = val[1]
             train_data["y"].append(target)
         else:
             inference_data["ids"].append(id)
