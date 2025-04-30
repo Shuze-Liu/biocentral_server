@@ -105,7 +105,12 @@ def verify_config(config_dict: dict):
         raise ValueError("[verify_config]: CUDA device is not available")
     return verify_optim_target(config_dict)
 
-
+@print_io
+def parse_str_to_list(s, delim = ','):
+    strlist: list[str] = s[1:-1].split(delim)
+    strlist = [strr.strip() for strr in strlist]
+    return strlist
+        
 def verify_optim_target(config_dict: dict):
     is_discrete: bool = config_dict.get("discrete")
     if is_discrete is None:
@@ -120,6 +125,13 @@ def verify_optim_target(config_dict: dict):
             raise KeyError(
                 "[verify_config]: Config for discrete target need to include discrete_labels and discrete_targets field"
             )
+        if isinstance(labels, str):
+            labels = parse_str_to_list(labels)
+            config_dict['discrete_labels'] = labels
+        if isinstance(targets, str):
+            targets = parse_str_to_list(targets)
+            config_dict['discrete_targets'] = targets
+
         sl, st = set(labels), set(targets)
         if not (sl.issuperset(st) and len(sl) > len(st)):
             raise ValueError("[verify_config]: targets should be true subset of labels")
