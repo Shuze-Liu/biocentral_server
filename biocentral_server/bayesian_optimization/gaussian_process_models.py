@@ -17,26 +17,27 @@ class GPRegressionModel(gpytorch.models.ExactGP):
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
-
-# regression model to be transformed into classification
+# will modules in torch autometically been set as parameter??? regieter buffer?
 class GPClassificationModel(gpytorch.models.ExactGP):
     def __init__(self, train_x: torch.Tensor, train_y, likelihood, num_classes):
         # initialize exactgp
         super(GPClassificationModel, self).__init__(train_x, train_y, likelihood)
-        self.mean_module = ConstantMean(batch_shape=torch.Size((num_classes,)))
+        # self.mean_module = ConstantMean(batch_shape=torch.Size((num_classes,)))
+        self.mean_module = LinearMean(train_x.shape[-1], batch_shape=torch.Size((num_classes,)))
         self.covar_module = ScaleKernel(
             RBFKernel(batch_shape=torch.Size((num_classes,))),
             batch_shape=torch.Size((num_classes,)),
         )
+        # RBFKernel(lengthscale_constraint=gpytorch.constraints.Interval(0.1, 2.0), batch_shape=torch.Size((num_classes,))),
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
 
 def trainGPClsModel(
-    trainset: dict, lr: float = 0.3, epoch: int = 120, device: str = "cpu"
+    trainset: dict, lr: float = 0.3, epoch: int = 140, device: str = "cpu"
 ):
     device = torch.device(device)
     print(f"training on device: {device}")

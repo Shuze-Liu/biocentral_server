@@ -153,7 +153,6 @@ def val_dataset_split(train_data: dict, val_rate: float = 0.2, random_seed: int 
     train_indices = indices[val_size:]
     val_indices = indices[:val_size]
 
-    print(val_indices)
     val_dataset = {
         "ids": [train_data["ids"][i] for i in val_indices],
         "X": train_data["X"][val_indices],
@@ -273,9 +272,10 @@ def train_and_inference_classification(train_data, inference_data, config_dict):
     '''
     if isinstance(train_data['X'], list) or isinstance(inference_data['X'], list):
         raise ValueError("train_and_inference_classification: data should not be empty")
-    model, likelihood = gp.trainGPClsModel(train_data, device=config_dict.get('device', 'cpu'))
+    model, likelihood = gp.trainGPClsModel(train_data, epoch=200, device=config_dict.get('device', 'cpu'))
     with torch.no_grad():
         prediction = likelihood(model(inference_data['X']))
+        print(f"prediction mean: {prediction.mean}")
     tgt_idx = target_index(config_dict)
     means = prediction.mean[tgt_idx]
     uncer = prediction.covariance_matrix[tgt_idx].diag()
@@ -299,7 +299,7 @@ def pipeline(config_path: str, result_path: str = "", allow_empty_infer = False)
         print("data_prep_finished")
         if allow_empty_infer and isinstance(inference_data['X'], list):
             train_data, inference_data = val_dataset_split(train_data)
-            train_data = data_trunc(train_data, 6000) # my memory can't handle too much data
+            train_data = data_trunc(train_data, 6000)
         # train model, inference and add with acquisition function score
         if config_dict['discrete']:
             scores, means, uncertainties = train_and_inference_classification(train_data, inference_data, config_dict)
